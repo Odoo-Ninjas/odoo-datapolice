@@ -448,7 +448,7 @@ class DataPolice(models.Model):
             if "model" in error and "res_id" in error:
                 obj = self.env[error["model"]].sudo().browse(error["res_id"])
                 objname = str(obj.name_get()[0][1])
-                url = self.env["ir.config_parameter"].get_param("web.base.url")
+                url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
                 url += "#model=" + error["model"] + "&id=" + str(error["res_id"])
                 link = f"<a href='{url}'>{objname}: {error['text']}</a>"
                 appendix = f"<li>{link}</li>\n"
@@ -464,6 +464,8 @@ class DataPolice(models.Model):
 
     def _send_mail_for_single_instance(self, instance, errors):
         mail_to = self._get_all_email_recipients()
+        if not mail_to:
+            return
         new_small_text, new_text = self._get_error_text(errors)
         by_email = {}
         for email in mail_to.split(","):
@@ -512,7 +514,7 @@ class DataPolice(models.Model):
             if not texts["text"]:
                 continue
             text = base64.b64encode(texts["text"].encode("utf-8"))
-            self.env["mail.mail"].create(
+            self.env["mail.mail"].sudo().create(
                 {
                     "auto_delete": True,
                     "subject": subject or f"DataPolice Run {datetime.now()}",
