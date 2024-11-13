@@ -242,7 +242,8 @@ class DataPolice(models.Model):
                 )._check_instance(obj, RUN_ID)
         finally:
             self._with_delay(
-                enabled=not self.env.context.get("datapolice_noasync"), priority=800,
+                enabled=not self.env.context.get("datapolice_noasync"),
+                priority=800,
             )._start_observer(RUN_ID)
         if self._can_commit():
             self.env.cr.commit()
@@ -288,13 +289,15 @@ class DataPolice(models.Model):
             res_fix = self.with_context(datapolice_run_fixdef=True)._run_code(
                 obj, self.fix_expr, expect_result=False
             )
-            self.env['datapolice.increment'].sudo().create({
-                'dp_id': self.id,
-                'run_id': RUN_ID,
-                'model': obj._name,
-                'res_id': obj.id,
-                'ttype': 'fix',
-            })
+            self.env["datapolice.increment"].sudo().create(
+                {
+                    "dp_id": self.id,
+                    "run_id": RUN_ID,
+                    "model": obj._name,
+                    "res_id": obj.id,
+                    "ttype": "fix",
+                }
+            )
             res["tried_to_fix"] = True
             res["fix_result"] = res_fix
             res2 = self._run_code(obj, check_expr)
@@ -323,13 +326,15 @@ class DataPolice(models.Model):
         for error in errors:
             self._make_activity_for_error(error)
 
-        self.env['datapolice.increment'].sudo().create({
-            'ttype': 'check',
-            'run_id': RUN_ID,
-            'dp_id': self.id,
-            'model': obj._name,
-            'id': obj.id,
-        })
+        self.env["datapolice.increment"].sudo().create(
+            {
+                "ttype": "check",
+                "run_id": RUN_ID,
+                "dp_id": self.id,
+                "model": obj._name,
+                "id": obj.id,
+            }
+        )
         return errors
 
     def _make_activity_for_error(self, error):
@@ -343,7 +348,10 @@ class DataPolice(models.Model):
         return self._check_instance(instance, RUN_ID=str(uuid.uuid4()))
 
     def reset_fix_counter(self):
-        self.fix_counter = 0
+        self.env.cr.execute(
+            ("delete from datapolice_increment where dp_id=%s and ttype='fix'"),
+            (self.id,),
+        )
         return True
 
     def run_async(self, identifier=None):
@@ -625,12 +633,18 @@ class DataPolice(models.Model):
             with reg.cursor() as cr:
                 cr.execute("set transaction ISOLATION LEVEL READ COMMITTED;")
                 sql = "select run_id from datapolice_increment where dp_id=%s and ttype=%s order by create_date desc limit 1"
-                cr.execute(sql, (rec.id, 'check',))
+                cr.execute(
+                    sql,
+                    (
+                        rec.id,
+                        "check",
+                    ),
+                )
                 maxrun = cr.fetchone()
                 if maxrun:
                     maxrun = maxrun[0]
                 sql = "select count(*) from datapolice_increment where dp_id=%s and ttype='fix'"
-                cr.execute(sql, (rec.id, ))
+                cr.execute(sql, (rec.id,))
                 rec.fix_counter = cr.fetchone()[0]
 
                 sql = "select count(*) from datapolice_increment where dp_id=%s and run_id=%s and ttype='check'"
