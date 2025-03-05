@@ -14,13 +14,12 @@ class Logging(models.Model):
     @api.model
     def _insert_log(self, text, trace, datapolice_id):
 
-        with odoo.api.Environment.manage():
-            with odoo.registry(self.env.cr.dbname).cursor() as new_cr:
-                new_cr.execute(
-                    (
-                        "insert into datapolice_log(create_date, excinfo, stacktrace, datapolice_id) "
-                        "values(%s, %s, %s, %s)"
-                    ),
-                    (fields.Datetime.now(), text, trace, datapolice_id),
-                )
-                new_cr.commit()
+        with odoo.registry(self.env.cr.dbname).cursor() as new_cr:
+            new_cr.execute(
+                (
+                    "insert into datapolice_log(create_date, excinfo, stacktrace, datapolice_id) "
+                    "values(%s, %s, %s, %s)"
+                ),
+                (fields.Datetime.now(), text, trace, datapolice_id),
+            )
+            new_cr.commit()
