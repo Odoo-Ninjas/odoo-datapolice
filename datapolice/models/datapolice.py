@@ -278,6 +278,8 @@ class DataPolice(models.Model):
             }
 
         obj = obj.sudo()
+        if not obj.exists():
+            return
         instance_name = str(obj.name_get()[0][1])
         check_expr = self.check_expr or "False"
         res = self._run_code(obj, check_expr)
@@ -488,7 +490,7 @@ class DataPolice(models.Model):
                     ]
                 )
             ):
-                raise RetryableJobError("Still running", seconds=60)
+                raise RetryableJobError("Still running", seconds=60, ignore_retry=True)
 
         for dp in self.filtered(lambda x: x.enabled):
             mail_to = dp._get_all_email_recipients()
