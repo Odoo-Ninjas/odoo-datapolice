@@ -16,6 +16,7 @@ class IncChecked(models.Model):
             record.unlink()
             self.env.cr.commit()
 
+    @api.model
     def _compress(self):
         env = self.env
         env.cr.execute("select distinct run_id from datapolice_increment")
@@ -34,9 +35,9 @@ class IncChecked(models.Model):
                     delete from datapolice_increment 
                     where run_id = %s and ttype = %s and model = %s
                 """, (run_id, ttype, model))
-                env.cr.execute(""""
+                env.cr.execute("""
                     insert into datapolice_increment(
                         run_id, ttype, model, value, create_date)
-                    values (%s, %s, %s, 0, %s, %s)
+                    values (%s, %s, %s, %s, %s)
                 """, (run_id, ttype, model, value, create_date))
             env.cr.commit()
