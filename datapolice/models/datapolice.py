@@ -296,7 +296,6 @@ class DataPolice(models.Model):
                     "dp_id": self.id,
                     "run_id": RUN_ID,
                     "model": obj._name,
-                    "res_id": obj.id,
                     "ttype": "fix",
                 }
             )
@@ -647,11 +646,11 @@ class DataPolice(models.Model):
                 maxrun = cr.fetchone()
                 if maxrun:
                     maxrun = maxrun[0]
-                sql = "select count(*) from datapolice_increment where dp_id=%s and ttype='fix'"
+                sql = "select sum(value) from datapolice_increment where dp_id=%s and ttype='fix'"
                 cr.execute(sql, (rec.id,))
                 rec.fix_counter = cr.fetchone()[0]
 
-                sql = "select count(*) from datapolice_increment where dp_id=%s and run_id=%s and ttype='check'"
+                sql = "select sum(value) from datapolice_increment where dp_id=%s and run_id=%s and ttype='check'"
                 cr.execute(sql, (rec.id, maxrun))
                 rec.checked = cr.fetchone()[0]
                 cr.execute("ROLLBACK;")
