@@ -20,15 +20,13 @@
     "demo": [],
     "demo_xml": [],
     "depends": ["base", "mail", "method_trigger"],
-    "external_dependencies": {
-        "python": ["arrow"],
-    },
+    "external_dependencies": {"python": ["arrow"]},
     "description": "",
     "installable": True,
     "js": [],
     "name": "datapolice",
-    "qweb": [],
     "test": [],
     "version": "1.4",
     "web": False,
+    "assets": {"web.assets_backend": []},
 }
