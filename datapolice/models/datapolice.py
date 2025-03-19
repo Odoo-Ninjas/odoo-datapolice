@@ -27,6 +27,7 @@ _logger = logging.getLogger("datapolice")
 class DataPolice(models.Model):
     _inherit = "mail.thread"
     _name = "data.police"
+    _log_access = False
 
     active = fields.Boolean(default=True)
     tag_ids = fields.Many2many("datapolice.tag", string="Tags")
@@ -54,7 +55,7 @@ class DataPolice(models.Model):
         "ir.model", string="Model", required=True, ondelete="cascade"
     )
     enabled = fields.Boolean("Enabled", default=True, tracking=True)
-    errors = fields.Integer("Count Errors", compute="_compute_count_errors", store=True)
+    errors = fields.Integer("Count Errors", compute="_compute_count_errors", store=False) # on store true too many serialize errors
     checked = fields.Integer("Count Checked", compute="_compute_increment")
     ratio = fields.Float("Success Ratio [%]", compute="_compute_success")
     domain = fields.Text("Domain")
@@ -323,6 +324,12 @@ class DataPolice(models.Model):
             success = pushup(res["exception"] or "")
 
         errors = list(filter(lambda x: not x["ok"], success))
+        json_errors = json.dumps(errors)
+        self.env['data.police.queue'].sudo().create({
+            'datapolice_id': self.id,
+            'infopackage': json_errors,
+            "action": 'dump_errors',
+        })
         self._dump_last_errors(errors)
         for error in errors:
             self._make_activity_for_error(error)
@@ -412,7 +419,7 @@ class DataPolice(models.Model):
 
     def _post_status_message(self):
         for rec in self:
-            body = f"Checked: {self.checked}\nErrors: {self.errors}\nSucecss-Ratio: {rec.ratio:.2f}%"
+            body = f"Checked: {self.checked}\nErrors: {self.errors}\nSuccess-Ratio: {rec.ratio:.2f}%"
             rec.message_post(body=body)
 
     def _get_all_email_recipients(self):

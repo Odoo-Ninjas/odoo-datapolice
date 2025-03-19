@@ -8,6 +8,8 @@ model_datapolice_ack,base.group_system,datapolice_ack_base_group_system,n/a,1,1,
 model_datapolice_tag,base.group_system,datapolice_tag_base_group_system,n/a,1,1,1,1
 model_datapolice_group,base.group_system,datapolice_group_base_group_system,n/a,1,1,1,1
 model_datapolice_trigger_field,base.group_system,datapolice_field_trigger_base_group_system,n/a,1,1,1,1
+model_data_police_queue,base.group_system,data_police_queue_base_group_system,n/a,1,1,1,1
+
 
 
 

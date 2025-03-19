@@ -5,6 +5,7 @@ from odoo.exceptions import UserError, RedirectWarning, ValidationError
 class DBLastError(models.Model):
     _inherit = "datapolice.ack"
     _name = "datapolice.lasterror"
+    _log_access = False
 
     def acknowledge(self):
         for rec in self:
