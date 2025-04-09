@@ -24,8 +24,8 @@ class DBAcknowledged(models.Model):
         self.ensure_one()
         return {
             "view_type": "form",
-            "res_model": self._name,
-            "res_id": self.id,
+            "res_model": self._res_model,
+            "res_id": self.res_id,
             "views": [(False, "form")],
             "type": "ir.actions.act_window",
             "target": "current",
