@@ -7,13 +7,13 @@
       <field name="res_model">data.police</field>
       <field name="view_mode">tree,form</field>
     </record>
-    <menuitem parent="menu_root" id="base.menu_datapolice" action="act_datapolice_window"/>
+    <menuitem parent="menu_root" id="base.menu_datapolice" action="act_datapolice_window" sequence="1"/>
     <record id='act_cronjob_groups' model='ir.actions.act_window'>
       <field name='name'>Cronjobs</field>
       <field name='res_model'>datapolice.cronjob.group</field>
       <field name='view_mode'>tree</field>
     </record>
-    <menuitem parent="menu_root" id="menu_datapolice_cronjob_group" action="act_cronjob_groups"/>
+    <menuitem parent="menu_root" id="menu_datapolice_cronjob_group" action="act_cronjob_groups" sequence="2"/>
     <record id='logs_action' model='ir.actions.act_window'>
       <field name='name'>Logs</field>
       <field name='res_model'>datapolice.log</field>
@@ -23,7 +23,7 @@
       </field>
     </record>
     <menuitem parent="menu_root" id="menu_logs" action="logs_action"/>
-    <menuitem id="config_menu" parent="menu_root" name="Configuration"/>
+    <menuitem id="config_menu" parent="menu_root" name="Configuration" sequence="3"/>
     <record id='groups_action' model='ir.actions.act_window'>
       <field name='name'>datapolice.group</field>
       <field name='res_model'>datapolice.group</field>
