@@ -90,6 +90,20 @@ case
                   </div>
                 </details>
               </page>
+              <page name="stats" string="Statistics">
+                <field name="stat_ids">
+                  <tree>
+                    <field name="count_checked"/>
+                    <field name="count_errors"/>
+                    <field name="percent_ok"/>
+                    <field name="date_start"/>
+                    <field name="date_stop"/>
+
+                  </tree>
+
+                </field>
+
+              </page>
               <page string="Fix">
                 <field name="fix_expr" widget="ace" options="{'mode': 'python'}"/>
                 <div>

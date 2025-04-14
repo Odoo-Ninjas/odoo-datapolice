@@ -11,3 +11,4 @@ from . import group
 from . import mail_activity
 from . import incrementor
 from . import infoqueue
+from . import stats

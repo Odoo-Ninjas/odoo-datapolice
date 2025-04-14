@@ -29,6 +29,7 @@ class DataPolice(models.Model):
     _name = "data.police"
     _log_access = False
 
+    stat_ids = fields.One2many("data.police.stats", "datapolice_id")
     active = fields.Boolean(default=True)
     tag_ids = fields.Many2many("datapolice.tag", string="Tags")
     group_id = fields.Many2one("datapolice.group", string="Group")
@@ -55,7 +56,9 @@ class DataPolice(models.Model):
         "ir.model", string="Model", required=True, ondelete="cascade"
     )
     enabled = fields.Boolean("Enabled", default=True, tracking=True)
-    errors = fields.Integer("Count Errors", compute="_compute_count_errors", store=False) # on store true too many serialize errors
+    errors = fields.Integer(
+        "Count Errors", compute="_compute_count_errors", store=False
+    )  # on store true too many serialize errors
     checked = fields.Integer("Count Checked", compute="_compute_increment")
     ratio = fields.Float("Success Ratio [%]", compute="_compute_success")
     domain = fields.Text("Domain")
@@ -231,6 +234,7 @@ class DataPolice(models.Model):
 
     def _make_checks(self, instances):
         RUN_ID = self.env.context.get("datapolice_identifier") or str(uuid.uuid4())
+        self.with_context(datapolice_identifier=RUN_ID)._ensure_stats_entry()
         try:
             for idx, obj in enumerate(instances, 1):
                 identity_key = f"{RUN_ID}_dp_{self.id}_{obj._name}_{obj.id}"
@@ -263,7 +267,7 @@ class DataPolice(models.Model):
                     seconds=60,
                     ignore_retry=True,
                 )
-        self._post_status_message()
+        self._post_status_message(run_id)
 
     def _check_instance(self, obj, RUN_ID):
         if not self.enabled:
@@ -325,11 +329,13 @@ class DataPolice(models.Model):
 
         errors = list(filter(lambda x: not x["ok"], success))
         json_errors = json.dumps(errors)
-        self.env['data.police.queue'].sudo().create({
-            'datapolice_id': self.id,
-            'infopackage': json_errors,
-            "action": 'dump_errors',
-        })
+        self.env["data.police.queue"].sudo().create(
+            {
+                "datapolice_id": self.id,
+                "infopackage": json_errors,
+                "action": "dump_errors",
+            }
+        )
         self._dump_last_errors(errors)
         for error in errors:
             self._make_activity_for_error(error)
@@ -380,10 +386,27 @@ class DataPolice(models.Model):
         police = self
 
         police.reset()
+        self._ensure_stats_entry()
         self.env.cr.commit()
         instances_to_check = police._fetch_objects()
         self.env.cr.commit()
         police._make_checks(instances_to_check)
+
+    def _ensure_stats_entry(self):
+        if not self.env.context.get("datapolice_identifier"):
+            return
+        exist = self.env["data.police.stats"].sudo().search(
+            [("run_id", "=", self.env.context.get("datapolice_identifier"))]
+        )
+        if exist:
+            return exist
+        return exist.create(
+            {
+                "run_id": self.env.context["datapolice_identifier"],
+                "datapolice_id": self.id,
+                "date_start": fields.Datetime.now(),
+            }
+        )
 
     def _inc_checked(self):
         self.checked += 1
@@ -417,10 +440,13 @@ class DataPolice(models.Model):
             else:
                 rec.ratio = 0
 
-    def _post_status_message(self):
+    def _post_status_message(self, run_id):
         for rec in self:
-            body = f"Checked: {self.checked}\nErrors: {self.errors}\nSuccess-Ratio: {rec.ratio:.2f}%"
-            rec.message_post(body=body)
+            stat = self.with_context(datapolice_identifier=run_id)._ensure_stats_entry()
+            stat.count_checked =self.checked
+            stat.count_errors =self.errors
+            stat.percent_ok = rec.ratio
+            stat.date_stop = fields.Datetime.now()
 
     def _get_all_email_recipients(self):
         def str2mails(s):
