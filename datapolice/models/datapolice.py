@@ -1,13 +1,11 @@
-from odoo import models, fields, api, _
+from odoo import models, fields, api
 import uuid
 import arrow
 import json
 import base64
 from datetime import datetime
-from odoo.exceptions import UserError, RedirectWarning, ValidationError
 import logging
 from datetime import datetime, date, timedelta
-from contextlib import contextmanager
 from odoo.tools import table_exists
 from odoo.tools.safe_eval import safe_eval
 from odoo import registry
@@ -194,6 +192,8 @@ class DataPolice(models.Model):
         return instances
 
     def _run_code(self, instance, expr, expect_result=True):
+        self.env.cr.commit()
+        self.env.cr.execute("commit;set transaction ISOLATION LEVEL REPEATABLE READ;")
         exception = ""
         try:
             result = self._exec_get_result(
@@ -214,6 +214,8 @@ class DataPolice(models.Model):
         except Exception as e:
             exception = str(e)
             result = False
+        self.env.cr.commit()
+        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
 
         return {
             "ok": result,
@@ -233,6 +235,8 @@ class DataPolice(models.Model):
         return True
 
     def _make_checks(self, instances):
+        self.env.cr.commit()
+        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
         RUN_ID = self.env.context.get("datapolice_identifier") or str(uuid.uuid4())
         self.with_context(datapolice_identifier=RUN_ID)._ensure_stats_entry()
         try:
@@ -270,6 +274,8 @@ class DataPolice(models.Model):
         self._post_status_message(run_id)
 
     def _check_instance(self, obj, RUN_ID):
+        self.env.cr.commit()
+        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
         if not self.enabled:
             return
 
@@ -326,6 +332,8 @@ class DataPolice(models.Model):
 
         else:
             success = pushup(res["exception"] or "")
+        self.env.cr.commit()
+        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
 
         errors = list(filter(lambda x: not x["ok"], success))
         json_errors = json.dumps(errors)
