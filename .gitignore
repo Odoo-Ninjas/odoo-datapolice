@@ -1,3 +1,6 @@
 .vscode
 odoo/
 .gimera
+.requirements.txt
+.requirements.txt.all
+addons_tools

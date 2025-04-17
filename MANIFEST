@@ -6,6 +6,7 @@
 	"addons_paths": [
 		"odoo/odoo/addons",
 		"odoo/addons",
+		"addons_tools/method_hook_triggers",
 		".",
 	],
 }

@@ -9,14 +9,7 @@ from datetime import datetime, date, timedelta
 from odoo.tools import table_exists
 from odoo.tools.safe_eval import safe_eval
 from odoo import registry
-
-try:
-    from odoo.addons.queue_job.exception import RetryableJobError
-except:
-
-    class RetryableJobError(Exception):
-        def __init__(self, *arsg, **kw):
-            super().__init__(*args, **kw)
+from .exceptions import RetryableJobError
 
 
 _logger = logging.getLogger("datapolice")
@@ -403,8 +396,10 @@ class DataPolice(models.Model):
     def _ensure_stats_entry(self):
         if not self.env.context.get("datapolice_identifier"):
             return
-        exist = self.env["data.police.stats"].sudo().search(
-            [("run_id", "=", self.env.context.get("datapolice_identifier"))]
+        exist = (
+            self.env["data.police.stats"]
+            .sudo()
+            .search([("run_id", "=", self.env.context.get("datapolice_identifier"))])
         )
         if exist:
             return exist
@@ -451,8 +446,8 @@ class DataPolice(models.Model):
     def _post_status_message(self, run_id):
         for rec in self:
             stat = self.with_context(datapolice_identifier=run_id)._ensure_stats_entry()
-            stat.count_checked =self.checked
-            stat.count_errors =self.errors
+            stat.count_checked = self.checked
+            stat.count_errors = self.errors
             stat.percent_ok = rec.ratio
             stat.date_stop = fields.Datetime.now()
 
