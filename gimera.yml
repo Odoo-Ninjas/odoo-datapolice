@@ -7,3 +7,9 @@ repos:
     freeze_sha: true
     type: integrated
     branch: ${VERSION}
+
+  - branch: ${VERSION}
+    freeze_sha: true
+    path: addons_tools/method_hook_triggers
+    type: integrated
+    url: git@github.com:Odoo-Ninjas/odoo-method-hooktriggers.git
