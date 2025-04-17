@@ -185,8 +185,7 @@ class DataPolice(models.Model):
         return instances
 
     def _run_code(self, instance, expr, expect_result=True):
-        self.env.cr.commit()
-        self.env.cr.execute("commit;set transaction ISOLATION LEVEL REPEATABLE READ;")
+        self._easy_isolation_level()
         exception = ""
         try:
             result = self._exec_get_result(
@@ -207,8 +206,7 @@ class DataPolice(models.Model):
         except Exception as e:
             exception = str(e)
             result = False
-        self.env.cr.commit()
-        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
+        self._easy_isolation_level()
 
         return {
             "ok": result,
@@ -227,9 +225,17 @@ class DataPolice(models.Model):
             return bool(val)
         return True
 
+    @api.model
+    def _easy_isolation_level(self, cr=None):
+        breakpoint()
+        cr = cr or self.env.cr
+        if not self._can_commit():
+            return
+        cr.commit()
+        cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
+
     def _make_checks(self, instances):
-        self.env.cr.commit()
-        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
+        self._easy_isolation_level()
         RUN_ID = self.env.context.get("datapolice_identifier") or str(uuid.uuid4())
         self.with_context(datapolice_identifier=RUN_ID)._ensure_stats_entry()
         try:
@@ -267,8 +273,7 @@ class DataPolice(models.Model):
         self._post_status_message(run_id)
 
     def _check_instance(self, obj, RUN_ID):
-        self.env.cr.commit()
-        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
+        self._easy_isolation_level()
         if not self.enabled:
             return
 
@@ -325,8 +330,7 @@ class DataPolice(models.Model):
 
         else:
             success = pushup(res["exception"] or "")
-        self.env.cr.commit()
-        self.env.cr.execute("commit;set transaction ISOLATION LEVEL READ COMMITTED;")
+        self._easy_isolation_level()
 
         errors = list(filter(lambda x: not x["ok"], success))
         json_errors = json.dumps(errors)
@@ -670,7 +674,7 @@ class DataPolice(models.Model):
         reg = registry(self.env.cr.dbname)
         for rec in self:
             with reg.cursor() as cr:
-                cr.execute("set transaction ISOLATION LEVEL READ COMMITTED;")
+                self._easy_isolation_level(cr=cr)
                 sql = "select run_id from datapolice_increment where dp_id=%s and ttype=%s order by create_date desc limit 1"
                 cr.execute(
                     sql,
@@ -682,11 +686,27 @@ class DataPolice(models.Model):
                 maxrun = cr.fetchone()
                 if maxrun:
                     maxrun = maxrun[0]
-                sql = "select sum(value) from datapolice_increment where dp_id=%s and ttype='fix'"
-                cr.execute(sql, (rec.id,))
-                rec.fix_counter = cr.fetchone()[0]
-
-                sql = "select sum(value) from datapolice_increment where dp_id=%s and run_id=%s and ttype='check'"
-                cr.execute(sql, (rec.id, maxrun))
-                rec.checked = cr.fetchone()[0]
-                cr.execute("ROLLBACK;")
+                rec.checked = 0
+                rec.fix_counter = 0
+                if not maxrun:
+                    continue
+                sql = """
+                    select  ttype, sum(value)
+                    from datapolice_increment
+                    where dp_id=%s
+                    and run_id=%s
+                    group by ttype;
+                """
+                cr.execute(
+                    sql,
+                    (
+                        rec.id,
+                        maxrun,
+                    ),
+                )
+                cr.fetchall()
+                for rec in cr.fetchall():
+                    if rec[0] == "check":
+                        rec.checked = rec[1]
+                    elif rec[0] == "fix":
+                        rec.fix_counter = rec[1]

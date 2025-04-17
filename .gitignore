@@ -4,3 +4,9 @@ odoo/
 .requirements.txt
 .requirements.txt.all
 addons_tools
+.robot-vars
+update.log
+.odoo.ast
+requirements.hash
+requirements.txt
+requirements.txt.all
