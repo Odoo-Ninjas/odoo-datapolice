@@ -4,7 +4,7 @@ name: Deploy fixes to other versions with rebase main
 on:
   push:
     branches:
-      - 17.0
+      - 18.0
 
 permissions: write-all
 
