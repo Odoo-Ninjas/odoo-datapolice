@@ -1,4 +1,4 @@
-exclude: ^(/archived_inspirations)
+exclude: ^(archived_inspirations/|odoo/)
 repos:
   - repo: https://github.com/myint/autoflake
     rev: v2.2.0

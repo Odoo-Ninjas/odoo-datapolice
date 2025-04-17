@@ -1,3 +1,9 @@
 common:
-  patches:
-    - patches/${VERSION}
+  vars:
+    VERSION: 16.0
+repos:
+  - url: github.com:odoo/odoo
+    path: odoo
+    freeze_sha: true
+    type: integrated
+    branch: ${VERSION}

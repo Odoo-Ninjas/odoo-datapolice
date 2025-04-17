@@ -1,0 +1,11 @@
+{
+	"version": 16.0,
+	"install": [
+		"crm", "datapolice",
+	],
+	"addons_paths": [
+		"odoo/odoo/addons",
+		"odoo/addons",
+		".",
+	],
+}
